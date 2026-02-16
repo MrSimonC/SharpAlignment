@@ -40,7 +40,7 @@ jobs:
           ./SharpAlignment.Console/SharpAlignment.Console.csproj
 
       - name: 📤 Upload NUPKG artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: sharpalignment
           path: src/*.nupkg
@@ -68,7 +68,7 @@ jobs:
           --output ../artifacts/publish/win-x64
 
       - name: 📤 Upload self-contained binaries artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: sharpalignment-self-contained
           path: |
