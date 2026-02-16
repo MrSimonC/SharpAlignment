@@ -1,7 +1,7 @@
-using FluentAssertions;
-using SharpAlignment.Reorganizing;
 using System;
 using System.Linq;
+using FluentAssertions;
+using SharpAlignment.Reorganizing;
 using Xunit;
 
 namespace SharpAlignment.UnitTests.Reorganizing;

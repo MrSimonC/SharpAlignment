@@ -1,13 +1,12 @@
+using System;
 using FluentAssertions;
 using SharpAlignment.Reorganizing;
-using System;
 using Xunit;
 
 namespace SharpAlignment.UnitTests.Reorganizing;
 
 public class MemberInfoComparerTest
 {
-
     [Theory]
     [InlineData(MemberAccessModifier.None, MemberAccessModifier.None, 0)]
     [InlineData(MemberAccessModifier.Private, MemberAccessModifier.Private, 0)]
@@ -105,6 +104,7 @@ public class MemberInfoComparerTest
 
         AssertCompare(expected, result);
     }
+
     [Theory]
     [InlineData("A", "A", 0)]
     [InlineData("a", "a", 0)]
