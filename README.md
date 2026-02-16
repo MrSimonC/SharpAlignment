@@ -17,6 +17,7 @@ Using this tool will cleanup your `C#` file by
 - `--no-sort-members-by-alphabet`: Disables sorting members by alphabet. [default: `false`]
 - `--sort-members-by-alphabet-case-sensitive`: Enables case-sensitive sorting for member identifiers. [default: `false`]
 - `--dry-run`: Does not modify files. For a file, prints `no changes` and exits with `0` when no update is needed, or prints the file path and exits with `1` when changes would be made. For a directory, scans `*.cs` files recursively, prints affected file paths, and exits with `0` (`all files ok`) or `1` (changes found). [default: `false`]
+- `--exclude`: Excludes one or more file or directory paths from directory scanning. Can be supplied multiple times.
 - `--system-using-first`: Places using directives starting with `System` before other usings. [default: `false`]
 - `--version`: Prints the tool version and exits. [default: `false`]
 
@@ -38,6 +39,7 @@ Options:
   --no-sort-members-by-alphabet              Disables sorting members by alphabet. [default: False]
   --sort-members-by-alphabet-case-sensitive  Enables case-sensitive sorting for member identifiers. [default: False]
   --dry-run                                  Reports what would change without modifying files. [default: False]
+  --exclude <exclude>                        Excludes one or more file or directory paths from directory scanning.
   --system-using-first                       Places using directives starting with 'System' before other usings. [default: False]
   --version                                  Show version information
   -?, -h, --help                             Show help and usage information
@@ -153,6 +155,8 @@ sharpalignment path/to/MyClass.cs --dry-run
 # Dry run on a file: exit code 0 with "no changes", or 1 with the file path
 # Dry run on a directory: exit code 0 with "all files ok", or 1 with affected file paths
 sharpalignment --dry-run path/to/csharp-project
+# Exclude one or more paths while scanning a directory
+sharpalignment --dry-run --exclude path/to/csharp-project/bin --exclude path/to/csharp-project/obj path/to/csharp-project
 
 # Place System usings first
 sharpalignment path/to/MyClass.cs --system-using-first

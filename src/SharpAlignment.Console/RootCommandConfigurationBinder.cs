@@ -7,6 +7,7 @@ namespace SharpAlignment;
 public class RootCommandConfigurationBinder : BinderBase<RootCommandConfiguration>
 {
     private readonly Option<bool> _dryRun;
+    private readonly Option<string[]> _exclude;
     private readonly Argument<FileSystemInfo?> _input;
     private readonly Option<bool> _noSortMembersByAlphabet;
     private readonly Option<bool> _sortMembersByAlphabetCaseSensitive;
@@ -16,6 +17,7 @@ public class RootCommandConfigurationBinder : BinderBase<RootCommandConfiguratio
         Option<bool> noSortMembersByAlphabet,
         Option<bool> sortMembersByAlphabetCaseSensitive,
         Option<bool> dryRun,
+        Option<string[]> exclude,
         Option<bool> systemUsingFirst,
         Argument<FileSystemInfo?> input
     )
@@ -23,6 +25,7 @@ public class RootCommandConfigurationBinder : BinderBase<RootCommandConfiguratio
         _noSortMembersByAlphabet = noSortMembersByAlphabet;
         _sortMembersByAlphabetCaseSensitive = sortMembersByAlphabetCaseSensitive;
         _dryRun = dryRun;
+        _exclude = exclude;
         _systemUsingFirst = systemUsingFirst;
         _input = input;
     }
@@ -48,6 +51,7 @@ public class RootCommandConfigurationBinder : BinderBase<RootCommandConfiguratio
                 _sortMembersByAlphabetCaseSensitive
             ),
             DryRun = bindingContext.ParseResult.GetValueForOption(_dryRun),
+            ExcludedPaths = bindingContext.ParseResult.GetValueForOption(_exclude) ?? [],
             SystemUsingFirst = bindingContext.ParseResult.GetValueForOption(_systemUsingFirst),
             Mode = mode,
             File = input as FileInfo,

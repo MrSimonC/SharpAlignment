@@ -27,6 +27,13 @@ public class Program
             description: "Reports what would change without modifying files.",
             getDefaultValue: () => false
         );
+        var excludeOption = new Option<string[]>(
+            name: "--exclude",
+            description: "Excludes one or more file or directory paths from directory scanning."
+        )
+        {
+            AllowMultipleArgumentsPerToken = false,
+        };
         var systemUsingFirstOption = new Option<bool>(
             name: "--system-using-first",
             description: "Places using directives starting with 'System' before other usings.",
@@ -75,6 +82,7 @@ public class Program
         rootCommand.AddOption(noSortMembersByAlphabetOption);
         rootCommand.AddOption(sortMembersByAlphabetCaseSensitiveOption);
         rootCommand.AddOption(dryRunOption);
+        rootCommand.AddOption(excludeOption);
         rootCommand.AddOption(systemUsingFirstOption);
         rootCommand.AddArgument(inputFileArg);
 
@@ -84,6 +92,7 @@ public class Program
                 noSortMembersByAlphabetOption,
                 sortMembersByAlphabetCaseSensitiveOption,
                 dryRunOption,
+                excludeOption,
                 systemUsingFirstOption,
                 inputFileArg
             )
