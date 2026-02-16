@@ -1,0 +1,25 @@
+{
+  "packages": {
+    "src": {
+      "release-type": "node",
+      "extra-files": ["Directory.Build.props"],
+      "changelog-sections": [
+        {
+          "type": "feat",
+          "section": "🚀 Features",
+          "hidden": false
+        },
+        {
+          "type": "fix",
+          "section": "🐛 Bug Fixes",
+          "hidden": false
+        },
+        {
+          "type": "build",
+          "section": "📦️ Build System, Dependencies",
+          "hidden": false
+        }
+      ]
+    }
+  }
+}

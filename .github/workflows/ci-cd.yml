@@ -8,12 +8,12 @@ on:
     branches: ["**"]
 
 jobs:
-  sharpalignment-tool:
+  sharpalignment:
     name: 🟣 .NET Tool
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: sharpalignment-tool
+        working-directory: src
 
     steps:
       - name: 🛒 Checkout
@@ -42,8 +42,8 @@ jobs:
       - name: 📤 Upload NUPKG artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sharpalignment-tool
-          path: sharpalignment-tool/*.nupkg
+          name: sharpalignment
+          path: src/*.nupkg
           if-no-files-found: error
           retention-days: 1
 
@@ -70,23 +70,23 @@ jobs:
       - name: 📤 Upload self-contained binaries artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sharpalignment-tool-self-contained
+          name: sharpalignment-self-contained
           path: |
             artifacts/publish/linux-x64/sharpalignment
             artifacts/publish/win-x64/sharpalignment.exe
           if-no-files-found: error
           retention-days: 1
 
-  release-please:
-    name: ✨ Release Please
+  release-sync:
+    name: ✨ Release Sync
     if: github.ref_name == 'main'
     runs-on: ubuntu-latest
     outputs:
-      created-sharpalignment-tool: ${{ steps.release.outputs.sharpalignment-tool--release_created }}
+      created-src: ${{ steps.release.outputs.src--release_created }}
     steps:
-      - name: ✨ Release Please
+      - name: ✨ Create/Update release PR
         id: release
         uses: google-github-actions/release-please-action@v4
         with:
-          config-file: release-please/config.json
-          manifest-file: release-please/manifest.json
+          config-file: release-config.json
+          manifest-file: release-manifest.json

@@ -6,7 +6,7 @@ on:
       - master
       - main
     paths:
-      - sharpalignment-tool/Directory.Build.props
+      - src/Directory.Build.props
   workflow_dispatch:
 
 permissions:
@@ -30,15 +30,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          version="$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' sharpalignment-tool/Directory.Build.props | head -n 1)"
+          version="$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' src/Directory.Build.props | head -n 1)"
           if [ -z "$version" ]; then
-            echo "Failed to parse <Version> from sharpalignment-tool/Directory.Build.props"
+            echo "Failed to parse <Version> from src/Directory.Build.props"
             exit 1
           fi
 
           previous_version=""
           if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
-            previous_version="$(git show "${{ github.event.before }}:sharpalignment-tool/Directory.Build.props" 2>/dev/null | sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' | head -n 1 || true)"
+            previous_version="$(git show "${{ github.event.before }}:src/Directory.Build.props" 2>/dev/null | sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' | head -n 1 || true)"
           fi
 
           changed="true"
@@ -69,8 +69,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          dotnet build sharpalignment-tool/SharpAlignment.Console/SharpAlignment.Console.csproj -c Release
-          actual="$(dotnet sharpalignment-tool/SharpAlignment.Console/bin/Release/net10.0/sharpalignment.dll --version | tr -d '\r\n')"
+          dotnet build src/SharpAlignment.Console/SharpAlignment.Console.csproj -c Release
+          actual="$(dotnet src/SharpAlignment.Console/bin/Release/net10.0/sharpalignment.dll --version | tr -d '\r\n')"
           if [ "$actual" != "$VERSION" ]; then
             echo "Internal binary version '$actual' does not match release version '$VERSION'."
             exit 1
@@ -78,7 +78,7 @@ jobs:
 
       - name: 📦 Publish Linux self-contained single-file
         run: >
-          dotnet publish sharpalignment-tool/SharpAlignment.Console/SharpAlignment.Console.csproj
+          dotnet publish src/SharpAlignment.Console/SharpAlignment.Console.csproj
           -c Release
           -r linux-x64
           --self-contained true
@@ -87,7 +87,7 @@ jobs:
 
       - name: 📦 Publish Windows self-contained single-file
         run: >
-          dotnet publish sharpalignment-tool/SharpAlignment.Console/SharpAlignment.Console.csproj
+          dotnet publish src/SharpAlignment.Console/SharpAlignment.Console.csproj
           -c Release
           -r win-x64
           --self-contained true

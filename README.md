@@ -123,8 +123,8 @@ If you use the global tool install above, you still need the [.NET 10 runtime](h
 
 The repository includes a GitHub Actions workflow at `.github/workflows/release-binaries.yml` that:
 
-1. Runs on push to `master`/`main` when `sharpalignment-tool/Directory.Build.props` changes (or manual dispatch).
-2. Reads the `<Version>` from `sharpalignment-tool/Directory.Build.props`.
+1. Runs on push to `master`/`main` when `src/Directory.Build.props` changes (or manual dispatch).
+2. Reads the `<Version>` from `src/Directory.Build.props`.
 3. Validates the internal binary version (`--version`) matches that same version.
 4. Publishes self-contained single-file binaries for Linux (`linux-x64`) and Windows (`win-x64`).
 5. Creates a GitHub release with tag `sharpalignment-v<Version>` and uploads both binaries.
