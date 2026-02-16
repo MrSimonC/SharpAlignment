@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/MrSimonC/SharpAlignment/compare/dotnet-sharpalignment-v1.0.0...dotnet-sharpalignment-v1.1.0) (2026-02-16)
+
+
+### 🚀 Features
+
+* add --exclude paths for directory scanning ([f40cf95](https://github.com/MrSimonC/SharpAlignment/commit/f40cf9500e8061e67da6577d6b15996382d1479e))
+
+
+### 🐛 Bug Fixes
+
+* pack root readme into tool package ([5a0ccfd](https://github.com/MrSimonC/SharpAlignment/commit/5a0ccfd623f9aee7900cf20c0b06bfdd63fe3f1b))
+
 ## [3.0.2](https://github.com/MrSimonC/SharpAlignment/compare/dotnet-sharpalignment-v3.0.1...dotnet-sharpalignment-v3.0.2) (2024-06-04)
 
 
