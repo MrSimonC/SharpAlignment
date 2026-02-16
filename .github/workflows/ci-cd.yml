@@ -72,8 +72,8 @@ jobs:
         with:
           name: sharpalignment-tool-self-contained
           path: |
-            artifacts/publish/linux-x64/dotnet-sharpalignment
-            artifacts/publish/win-x64/dotnet-sharpalignment.exe
+            artifacts/publish/linux-x64/sharpalignment
+            artifacts/publish/win-x64/sharpalignment.exe
           if-no-files-found: error
           retention-days: 1
 

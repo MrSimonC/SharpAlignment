@@ -6,7 +6,7 @@
 
     <Authors>Sebastian Rumohr</Authors>
     <PackageId>sharpalignment</PackageId>
-    <AssemblyName>dotnet-sharpalignment</AssemblyName>
+    <AssemblyName>sharpalignment</AssemblyName>
     <PackAsTool>true</PackAsTool>
     <Description>Reorganises, sorts and cleans up the provided C# file.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>

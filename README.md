@@ -29,7 +29,7 @@ Description:
   Reorganises, sorts and cleans up the provided C# file.
 
 Usage:
-  dotnet-sharpalignment [<input>] [options]
+  sharpalignment [<input>] [options]
 
 Arguments:
   <input>  Path to input file or directory, or piped input. []
@@ -127,36 +127,41 @@ The repository includes a GitHub Actions workflow at `.github/workflows/release-
 2. Reads the `<Version>` from `sharpalignment-tool/Directory.Build.props`.
 3. Validates the internal binary version (`--version`) matches that same version.
 4. Publishes self-contained single-file binaries for Linux (`linux-x64`) and Windows (`win-x64`).
-5. Creates a GitHub release with tag `dotnet-sharpalignment-v<Version>` and uploads both binaries.
+5. Creates a GitHub release with tag `sharpalignment-v<Version>` and uploads both binaries.
 
 Then use the tool to cleanup your code.
 
 ```sh
 # File mode
-dotnet-sharpalignment path/to/MyClass.cs
+sharpalignment path/to/MyClass.cs
 
 # Directory mode
-dotnet-sharpalignment path/to/csharp-project
+sharpalignment path/to/csharp-project
 # Scans *.cs files recursively in the directory
 
 # Pipe mode
-type path/to/MyClass.cs | dotnet-sharpalignment > MyClass.Reorganized.cs`
+type path/to/MyClass.cs | sharpalignment > MyClass.Reorganized.cs`
 
 # Do not sort members by alphabet
-dotnet-sharpalignment path/to/MyClass.cs --no-sort-members-by-alphabet
+sharpalignment path/to/MyClass.cs --no-sort-members-by-alphabet
 
 # Sort members by alphabet case-sensitively
-dotnet-sharpalignment path/to/MyClass.cs --sort-members-by-alphabet-case-sensitive
+sharpalignment path/to/MyClass.cs --sort-members-by-alphabet-case-sensitive
 
 # Dry run
-dotnet-sharpalignment path/to/MyClass.cs --dry-run
+sharpalignment path/to/MyClass.cs --dry-run
 # Dry run on a file: exit code 0 with "no changes", or 1 with the file path
 # Dry run on a directory: exit code 0 with "all files ok", or 1 with affected file paths
-dotnet-sharpalignment --dry-run path/to/csharp-project
+sharpalignment --dry-run path/to/csharp-project
 
 # Place System usings first
-dotnet-sharpalignment path/to/MyClass.cs --system-using-first
+sharpalignment path/to/MyClass.cs --system-using-first
 
 # Show version
-dotnet-sharpalignment --version
+sharpalignment --version
 ```
+
+## Acknowledgements
+
+- CodeMaid - but doesn't support CLI: https://github.com/codecadwallader/codemaid
+- code butler - https://github.com/just-seba/code-butler - which formed the basis of which this app was grown.

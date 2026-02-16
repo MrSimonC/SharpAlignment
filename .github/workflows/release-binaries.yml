@@ -70,7 +70,7 @@ jobs:
         run: |
           set -euo pipefail
           dotnet build sharpalignment-tool/SharpAlignment.Console/SharpAlignment.Console.csproj -c Release
-          actual="$(dotnet sharpalignment-tool/SharpAlignment.Console/bin/Release/net10.0/dotnet-sharpalignment.dll --version | tr -d '\r\n')"
+          actual="$(dotnet sharpalignment-tool/SharpAlignment.Console/bin/Release/net10.0/sharpalignment.dll --version | tr -d '\r\n')"
           if [ "$actual" != "$VERSION" ]; then
             echo "Internal binary version '$actual' does not match release version '$VERSION'."
             exit 1
@@ -98,26 +98,26 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cp artifacts/release/linux-x64/dotnet-sharpalignment artifacts/release/dotnet-sharpalignment-linux-x64
-          cp artifacts/release/win-x64/dotnet-sharpalignment.exe artifacts/release/dotnet-sharpalignment-win-x64.exe
-          chmod +x artifacts/release/dotnet-sharpalignment-linux-x64
+          cp artifacts/release/linux-x64/sharpalignment artifacts/release/sharpalignment-linux-x64
+          cp artifacts/release/win-x64/sharpalignment.exe artifacts/release/sharpalignment-win-x64.exe
+          chmod +x artifacts/release/sharpalignment-linux-x64
 
       - name: 📤 Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dotnet-sharpalignment-${{ env.VERSION }}
+          name: sharpalignment-${{ env.VERSION }}
           path: |
-            artifacts/release/dotnet-sharpalignment-linux-x64
-            artifacts/release/dotnet-sharpalignment-win-x64.exe
+            artifacts/release/sharpalignment-linux-x64
+            artifacts/release/sharpalignment-win-x64.exe
           if-no-files-found: error
           retention-days: 7
 
       - name: 🚀 Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: dotnet-sharpalignment-v${{ env.VERSION }}
-          name: dotnet-sharpalignment v${{ env.VERSION }}
+          tag_name: sharpalignment-v${{ env.VERSION }}
+          name: sharpalignment v${{ env.VERSION }}
           generate_release_notes: true
           files: |
-            artifacts/release/dotnet-sharpalignment-linux-x64
-            artifacts/release/dotnet-sharpalignment-win-x64.exe
+            artifacts/release/sharpalignment-linux-x64
+            artifacts/release/sharpalignment-win-x64.exe
