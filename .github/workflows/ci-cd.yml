@@ -1,0 +1,122 @@
+name: ✔ Test
+
+on:
+  push:
+    tags: ["**"]
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  sharpalignment-tool:
+    name: 🟣 .NET Tool
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sharpalignment-tool
+
+    steps:
+      - name: 🛒 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🟣 Setup .NET
+        uses: actions/setup-dotnet@v4
+
+      - name: 🛠️ Build
+        run: >
+          dotnet build 
+          --configuration Release
+
+      - name: ✔ Test
+        run: >
+          dotnet test
+          --configuration Release
+          --no-build
+
+      - name: 📦️ Pack .NET tool
+        run: >
+          dotnet pack
+          --output ./
+          ./SharpAlignment.Console/SharpAlignment.Console.csproj
+
+      - name: 📤 Upload NUPKG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sharpalignment-tool
+          path: sharpalignment-tool/*.nupkg
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: 📦 Publish self-contained Linux binary
+        run: >
+          dotnet publish
+          ./SharpAlignment.Console/SharpAlignment.Console.csproj
+          --configuration Release
+          --runtime linux-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          --output ../artifacts/publish/linux-x64
+
+      - name: 📦 Publish self-contained Windows binary
+        run: >
+          dotnet publish
+          ./SharpAlignment.Console/SharpAlignment.Console.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          --output ../artifacts/publish/win-x64
+
+      - name: 📤 Upload self-contained binaries artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sharpalignment-tool-self-contained
+          path: |
+            artifacts/publish/linux-x64/dotnet-sharpalignment
+            artifacts/publish/win-x64/dotnet-sharpalignment.exe
+          if-no-files-found: error
+          retention-days: 1
+
+  release-please:
+    name: ✨ Release Please
+    if: github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    outputs:
+      created-sharpalignment-tool: ${{ steps.release.outputs.sharpalignment-tool--release_created }}
+    steps:
+      - name: ✨ Release Please
+        id: release
+        uses: google-github-actions/release-please-action@v4
+        with:
+          config-file: release-please/config.json
+          manifest-file: release-please/manifest.json
+
+  publish-sharpalignment-tool:
+    name: 📯 Publish to nuget.org
+    runs-on: ubuntu-latest
+    needs:
+      - "release-please"
+      - "sharpalignment-tool"
+    if: ${{ needs.release-please.outputs.created-sharpalignment-tool }}
+    steps:
+      - name: 🛒 Sparce checkout (to have global.json present for .NET setup)
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            global.json
+
+      - name: 🟣 Setup .NET
+        uses: actions/setup-dotnet@v4
+
+      - name: 📥️ Download NUPKG artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: sharpalignment-tool
+
+      - name: 📯 Publish
+        run: >
+          dotnet nuget push
+          **.nupkg
+          --api-key ${{ secrets.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate

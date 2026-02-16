@@ -1,0 +1,25 @@
+using Xunit;
+using System.Collections.Generic;
+global using System.Linq;
+using FakeNews = Xunit.Fact;
+using System.Text;
+using System.Threading.Tasks;
+using static System.Math;
+using System;
+
+namespace TestCases.Usings
+{
+    using System.Threading.Tasks;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System;
+    using System.Text;
+
+
+
+
+    public interface ITest
+    {
+        Task Test();
+    }
+}
