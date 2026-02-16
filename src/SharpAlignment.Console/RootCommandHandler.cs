@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.CommandLine;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -35,7 +36,21 @@ public class RootCommandHandler
             return 0;
         }
 
-        var input = await ReadInput(configuration).ConfigureAwait(false);
+        string input;
+        Encoding? fileEncoding = null;
+
+        // For file mode, read with encoding detection
+        if (configuration.Mode == InputOutputMode.File)
+        {
+            var filePath = GetRequiredFilePath(configuration);
+            var result = await FileEncodingHelper.ReadAllTextWithEncodingAsync(filePath).ConfigureAwait(false);
+            input = result.Content;
+            fileEncoding = result.Encoding;
+        }
+        else
+        {
+            input = await ReadInput(configuration).ConfigureAwait(false);
+        }
 
         var clean = Clean(input);
         var root = Parse(clean);
@@ -54,7 +69,23 @@ public class RootCommandHandler
             return 1;
         }
 
-        await WriteOutput(output, configuration).ConfigureAwait(false);
+        // Only write if content has changed (for file mode)
+        if (configuration.Mode == InputOutputMode.File)
+        {
+            if (input != output)
+            {
+                await FileEncodingHelper.WriteAllTextWithEncodingAsync(
+                    GetRequiredFilePath(configuration),
+                    output,
+                    fileEncoding!
+                ).ConfigureAwait(false);
+            }
+        }
+        else
+        {
+            await WriteOutput(output, configuration).ConfigureAwait(false);
+        }
+
         return 0;
     }
 
@@ -93,11 +124,11 @@ public class RootCommandHandler
 
         var tasks = files.Select(file => Task.Run(async () =>
         {
-            var input = await File.ReadAllTextAsync(file.FullName).ConfigureAwait(false);
+            var (input, encoding) = await FileEncodingHelper.ReadAllTextWithEncodingAsync(file.FullName).ConfigureAwait(false);
             var clean = Clean(input);
             var root = Parse(clean);
             var organizedRoot = Reorganize(root, configuration);
-            return (File: file, Input: input, Output: organizedRoot.ToFullString());
+            return (File: file, Input: input, Output: organizedRoot.ToFullString(), Encoding: encoding);
         }));
 
         var processedFiles = (await Task.WhenAll(tasks).ConfigureAwait(false))
@@ -115,7 +146,7 @@ public class RootCommandHandler
                 return 0;
             }
 
-            foreach (var (file, _, _) in changedFiles)
+            foreach (var (file, _, _, _) in changedFiles)
             {
                 configuration.Console.WriteLine(file.FullName);
             }
@@ -123,9 +154,13 @@ public class RootCommandHandler
             return 1;
         }
 
-        foreach (var (file, _, output) in processedFiles)
+        foreach (var (file, input, output, encoding) in processedFiles)
         {
-            await File.WriteAllTextAsync(file.FullName, output).ConfigureAwait(false);
+            // Only write the file if the content has changed
+            if (input != output)
+            {
+                await FileEncodingHelper.WriteAllTextWithEncodingAsync(file.FullName, output, encoding).ConfigureAwait(false);
+            }
         }
 
         return 0;
