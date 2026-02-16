@@ -9,7 +9,7 @@
     <AssemblyName>sharpalignment</AssemblyName>
     <PackAsTool>true</PackAsTool>
     <Description>Reorganises, sorts and cleans up the provided C# file.</Description>
-    <PackageReadmeFile>..\..\README.md</PackageReadmeFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageProjectUrl></PackageProjectUrl>
     <RepositoryUrl>https://github.com/MrSimonC/SharpAlignment</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -30,7 +30,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" Link="README.md" />
   </ItemGroup>
 
   <ItemGroup>
