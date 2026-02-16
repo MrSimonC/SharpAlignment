@@ -81,6 +81,9 @@ jobs:
     name: ✨ Release Sync
     if: github.ref_name == 'main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     outputs:
       created-src: ${{ steps.release.outputs.src--release_created }}
     steps:
