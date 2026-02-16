@@ -1,14 +1,14 @@
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SharpAlignment.Padding;
-using SharpAlignment.Reorganizing;
-using SharpAlignment.Syntax;
 using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpAlignment.Padding;
+using SharpAlignment.Reorganizing;
+using SharpAlignment.Syntax;
 
 namespace SharpAlignment;
 
