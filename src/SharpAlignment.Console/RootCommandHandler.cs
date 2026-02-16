@@ -1,19 +1,24 @@
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SharpAlignment.Padding;
-using SharpAlignment.Reorganizing;
-using SharpAlignment.Syntax;
 using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using SharpAlignment.Padding;
+using SharpAlignment.Reorganizing;
+using SharpAlignment.Syntax;
 
 namespace SharpAlignment;
 
 public class RootCommandHandler
 {
+    private static readonly StringComparison _pathComparison = OperatingSystem.IsWindows()
+        ? StringComparison.OrdinalIgnoreCase
+        : StringComparison.Ordinal;
+
     public static async Task<int> Handle(RootCommandConfiguration configuration)
     {
         if (configuration.Mode == InputOutputMode.Directory)
@@ -21,7 +26,31 @@ public class RootCommandHandler
             return await HandleDirectory(configuration).ConfigureAwait(false);
         }
 
-        var input = await ReadInput(configuration).ConfigureAwait(false);
+        if (configuration.Mode == InputOutputMode.File && IsExcludedFile(configuration))
+        {
+            if (configuration.DryRun)
+            {
+                configuration.Console.WriteLine("no changes");
+            }
+
+            return 0;
+        }
+
+        string input;
+        Encoding? fileEncoding = null;
+
+        // For file mode, read with encoding detection
+        if (configuration.Mode == InputOutputMode.File)
+        {
+            var filePath = GetRequiredFilePath(configuration);
+            var result = await FileEncodingHelper.ReadAllTextWithEncodingAsync(filePath).ConfigureAwait(false);
+            input = result.Content;
+            fileEncoding = result.Encoding;
+        }
+        else
+        {
+            input = await ReadInput(configuration).ConfigureAwait(false);
+        }
 
         var clean = Clean(input);
         var root = Parse(clean);
@@ -40,7 +69,23 @@ public class RootCommandHandler
             return 1;
         }
 
-        await WriteOutput(output, configuration).ConfigureAwait(false);
+        // Only write if content has changed (for file mode)
+        if (configuration.Mode == InputOutputMode.File)
+        {
+            if (input != output)
+            {
+                await FileEncodingHelper.WriteAllTextWithEncodingAsync(
+                    GetRequiredFilePath(configuration),
+                    output,
+                    fileEncoding ?? throw new InvalidOperationException("File encoding was not detected")
+                ).ConfigureAwait(false);
+            }
+        }
+        else
+        {
+            await WriteOutput(output, configuration).ConfigureAwait(false);
+        }
+
         return 0;
     }
 
@@ -68,22 +113,22 @@ public class RootCommandHandler
             throw new InvalidOperationException("Directory mode requires a directory input.");
         }
 
+        var excludedPaths = GetExcludedPaths(configuration.ExcludedPaths, directory.FullName);
+
         var files = directory
             .EnumerateFiles("*.cs", SearchOption.AllDirectories)
-            .Where(f => !f.FullName
-                .Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-                .Any(segment => segment.Equals("bin", StringComparison.OrdinalIgnoreCase)
-                    || segment.Equals("obj", StringComparison.OrdinalIgnoreCase)))
+            .Where(f => !IsBinOrObjPath(f.FullName))
+            .Where(f => !IsExcludedPath(f.FullName, excludedPaths))
             .OrderBy(f => f.FullName, StringComparer.Ordinal)
             .ToList();
 
         var tasks = files.Select(file => Task.Run(async () =>
         {
-            var input = await File.ReadAllTextAsync(file.FullName).ConfigureAwait(false);
+            var (input, encoding) = await FileEncodingHelper.ReadAllTextWithEncodingAsync(file.FullName).ConfigureAwait(false);
             var clean = Clean(input);
             var root = Parse(clean);
             var organizedRoot = Reorganize(root, configuration);
-            return (File: file, Input: input, Output: organizedRoot.ToFullString());
+            return (File: file, Input: input, Output: organizedRoot.ToFullString(), Encoding: encoding);
         }));
 
         var processedFiles = (await Task.WhenAll(tasks).ConfigureAwait(false))
@@ -101,7 +146,7 @@ public class RootCommandHandler
                 return 0;
             }
 
-            foreach (var (file, _, _) in changedFiles)
+            foreach (var (file, _, _, _) in changedFiles)
             {
                 configuration.Console.WriteLine(file.FullName);
             }
@@ -109,9 +154,13 @@ public class RootCommandHandler
             return 1;
         }
 
-        foreach (var (file, _, output) in processedFiles)
+        foreach (var (file, input, output, encoding) in processedFiles)
         {
-            await File.WriteAllTextAsync(file.FullName, output).ConfigureAwait(false);
+            // Only write the file if the content has changed
+            if (input != output)
+            {
+                await FileEncodingHelper.WriteAllTextWithEncodingAsync(file.FullName, output, encoding).ConfigureAwait(false);
+            }
         }
 
         return 0;
@@ -192,5 +241,114 @@ public class RootCommandHandler
                     $"Mode \"{configuration.Mode}\" not implemented."
                 );
         }
+    }
+
+    private static bool IsBinOrObjPath(string filePath)
+    {
+        return filePath
+            .Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+            .Any(segment => segment.Equals("bin", StringComparison.OrdinalIgnoreCase)
+                || segment.Equals("obj", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool IsExcludedFile(RootCommandConfiguration configuration)
+    {
+        var filePath = configuration.File?.FullName;
+        if (filePath == null)
+        {
+            return false;
+        }
+
+        var excludedPaths = GetExcludedPaths(
+            configuration.ExcludedPaths,
+            Directory.GetCurrentDirectory()
+        );
+        return IsExcludedPath(filePath, excludedPaths);
+    }
+
+    private static bool IsExcludedPath(string filePath, IReadOnlyCollection<ExcludedPath> excludedPaths)
+    {
+        var normalizedFilePath = NormalizePath(filePath);
+
+        foreach (var excludedPath in excludedPaths)
+        {
+            if (!excludedPath.IsDirectory)
+            {
+                if (string.Equals(normalizedFilePath, excludedPath.FullPath, _pathComparison))
+                {
+                    return true;
+                }
+
+                continue;
+            }
+
+            if (
+                string.Equals(normalizedFilePath, excludedPath.FullPath, _pathComparison)
+                || normalizedFilePath.StartsWith(excludedPath.DirectoryPrefix, _pathComparison)
+            )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static IReadOnlyCollection<ExcludedPath> GetExcludedPaths(
+        IEnumerable<string> excludedPaths,
+        string baseDirectory
+    )
+    {
+        var result = new List<ExcludedPath>();
+        var seen = new HashSet<string>(_pathComparison == StringComparison.OrdinalIgnoreCase
+            ? StringComparer.OrdinalIgnoreCase
+            : StringComparer.Ordinal);
+
+        foreach (var rawPath in excludedPaths)
+        {
+            if (string.IsNullOrWhiteSpace(rawPath))
+            {
+                continue;
+            }
+
+            var resolvedPath = Path.IsPathRooted(rawPath)
+                ? rawPath
+                : Path.Combine(baseDirectory, rawPath);
+            var normalizedPath = NormalizePath(resolvedPath);
+            if (!seen.Add(normalizedPath))
+            {
+                continue;
+            }
+
+            var isDirectory = rawPath.EndsWith(Path.DirectorySeparatorChar)
+                || rawPath.EndsWith(Path.AltDirectorySeparatorChar)
+                || Directory.Exists(normalizedPath);
+
+            result.Add(new ExcludedPath(normalizedPath, isDirectory));
+        }
+
+        return result;
+    }
+
+    private static string NormalizePath(string path)
+    {
+        var fullPath = Path.GetFullPath(path);
+        var root = Path.GetPathRoot(fullPath);
+        if (string.IsNullOrEmpty(root))
+        {
+            return fullPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        }
+
+        if (fullPath.Length <= root.Length)
+        {
+            return fullPath;
+        }
+
+        return fullPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+    }
+
+    private readonly record struct ExcludedPath(string FullPath, bool IsDirectory)
+    {
+        public string DirectoryPrefix => FullPath + Path.DirectorySeparatorChar;
     }
 }

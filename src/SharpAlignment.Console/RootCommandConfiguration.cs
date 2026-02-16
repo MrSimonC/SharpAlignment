@@ -13,4 +13,5 @@ public class RootCommandConfiguration
     public bool SortMembersByAlphabet { get; init; }
     public bool SortMembersByAlphabetCaseSensitive { get; init; }
     public bool SystemUsingFirst { get; init; }
+    public string[] ExcludedPaths { get; init; } = [];
 }

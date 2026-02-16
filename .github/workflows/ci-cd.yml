@@ -81,12 +81,15 @@ jobs:
     name: ✨ Release Sync
     if: github.ref_name == 'main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     outputs:
       created-src: ${{ steps.release.outputs.src--release_created }}
     steps:
       - name: ✨ Create/Update release PR
         id: release
-        uses: google-github-actions/release-please-action@v4
+        uses: googleapis/release-please-action@v4
         with:
           config-file: release-config.json
           manifest-file: release-manifest.json
