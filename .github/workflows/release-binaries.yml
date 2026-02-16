@@ -101,7 +101,7 @@ jobs:
           chmod +x artifacts/release/linux-x64/sharpalignment
 
       - name: 📤 Upload workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: sharpalignment-${{ env.VERSION }}
           path: |
