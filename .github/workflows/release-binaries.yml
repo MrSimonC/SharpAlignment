@@ -98,17 +98,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cp artifacts/release/linux-x64/sharpalignment artifacts/release/sharpalignment-linux-x64
-          cp artifacts/release/win-x64/sharpalignment.exe artifacts/release/sharpalignment-win-x64.exe
-          chmod +x artifacts/release/sharpalignment-linux-x64
+          chmod +x artifacts/release/linux-x64/sharpalignment
 
       - name: 📤 Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: sharpalignment-${{ env.VERSION }}
           path: |
-            artifacts/release/sharpalignment-linux-x64
-            artifacts/release/sharpalignment-win-x64.exe
+            artifacts/release/linux-x64/sharpalignment
+            artifacts/release/win-x64/sharpalignment.exe
           if-no-files-found: error
           retention-days: 7
 
@@ -119,5 +117,5 @@ jobs:
           name: sharpalignment v${{ env.VERSION }}
           generate_release_notes: true
           files: |
-            artifacts/release/sharpalignment-linux-x64
-            artifacts/release/sharpalignment-win-x64.exe
+            artifacts/release/linux-x64/sharpalignment
+            artifacts/release/win-x64/sharpalignment.exe
