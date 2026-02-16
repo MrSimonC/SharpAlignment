@@ -21,7 +21,7 @@ jobs:
       changed: ${{ steps.version.outputs.changed }}
     steps:
       - name: 🛒 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
 
@@ -58,7 +58,7 @@ jobs:
       VERSION: ${{ needs.detect-version.outputs.version }}
     steps:
       - name: 🛒 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 🟣 Setup .NET
         uses: actions/setup-dotnet@v5
