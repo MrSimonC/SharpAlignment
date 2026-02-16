@@ -28,6 +28,22 @@ public class IntegrationTests
         return data;
     }
 
+    private static string GetTestCaseRequiringChanges()
+    {
+        var folder = Directory
+            .EnumerateDirectories(_testCasesDir)
+            .Select(dir => dir.Split(Path.DirectorySeparatorChar)[^1])
+            .FirstOrDefault(testCase =>
+            {
+                var originalPath = Path.Combine(_testCasesDir, testCase, "original.cs.test");
+                var cleanPath = Path.Combine(_testCasesDir, testCase, "clean.cs.test");
+                return File.ReadAllText(originalPath) != File.ReadAllText(cleanPath);
+            });
+
+        return folder
+            ?? throw new InvalidOperationException("No integration test case requiring changes found.");
+    }
+
     [Theory]
     [MemberData(nameof(TestCases))]
     public async Task DirectUseOfProgramClass(string folder)
@@ -85,7 +101,7 @@ public class IntegrationTests
     [Fact]
     public async Task DryRunDirectoryScansRecursivelyAndPrintsChangedFilePathsAndReturnsOne()
     {
-        var folder = (string)TestCases().First()[0];
+        var folder = GetTestCaseRequiringChanges();
         var originalPath = Path.Combine(_testCasesDir, folder, "original.cs.test");
         var cleanPath = Path.Combine(_testCasesDir, folder, "clean.cs.test");
         var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
@@ -119,7 +135,7 @@ public class IntegrationTests
     [Fact]
     public async Task DryRunDirectorySkipsBinAndObjFoldersWhenScanning()
     {
-        var folder = (string)TestCases().First()[0];
+        var folder = GetTestCaseRequiringChanges();
         var originalPath = Path.Combine(_testCasesDir, folder, "original.cs.test");
         var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDir);
@@ -158,7 +174,7 @@ public class IntegrationTests
     [Fact]
     public async Task DirectoryModeSkipsBinAndObjFoldersWhenScanning()
     {
-        var folder = (string)TestCases().First()[0];
+        var folder = GetTestCaseRequiringChanges();
         var originalPath = Path.Combine(_testCasesDir, folder, "original.cs.test");
         var cleanPath = Path.Combine(_testCasesDir, folder, "clean.cs.test");
         var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
@@ -190,7 +206,7 @@ public class IntegrationTests
     [Fact]
     public async Task DryRunDirectoryPrintsChangedFilesInStableOrder()
     {
-        var folder = (string)TestCases().First()[0];
+        var folder = GetTestCaseRequiringChanges();
         var originalPath = Path.Combine(_testCasesDir, folder, "original.cs.test");
         var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDir);
@@ -252,7 +268,7 @@ public class IntegrationTests
     [Fact]
     public async Task DryRunFileWithChangesPrintsFilePathAndReturnsOneWithoutModifyingFile()
     {
-        var folder = (string)TestCases().First()[0];
+        var folder = GetTestCaseRequiringChanges();
         var originalPath = Path.Combine(_testCasesDir, folder, "original.cs.test");
         var tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.cs");
         File.Copy(originalPath, tempPath);
