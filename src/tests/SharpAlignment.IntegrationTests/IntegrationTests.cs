@@ -485,6 +485,155 @@ public class IntegrationTests
         }
     }
 
+    [Fact]
+    public async Task FileMode_PreservesUtf8WithBom_WhenFileHasNoChanges()
+    {
+        // Arrange: Create a file with UTF-8 BOM that doesn't need changes
+        var tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.cs");
+        var content = "using System;\n\nclass C { }\n";
+        var utf8WithBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
+        var preamble = utf8WithBom.GetPreamble();
+        var contentBytes = utf8WithBom.GetBytes(content);
+        var bytes = new byte[preamble.Length + contentBytes.Length];
+        preamble.CopyTo(bytes, 0);
+        contentBytes.CopyTo(bytes, preamble.Length);
+        await File.WriteAllBytesAsync(tempPath, bytes);
+
+        try
+        {
+            // Verify the file has UTF-8 BOM before processing
+            var bytesBeforeProcessing = await File.ReadAllBytesAsync(tempPath);
+            HasUtf8Bom(bytesBeforeProcessing).Should().BeTrue();
+
+            // Act: Process the file
+            var exitCode = await Program.Main([tempPath]);
+
+            // Assert: File should still have UTF-8 BOM
+            var bytesAfterProcessing = await File.ReadAllBytesAsync(tempPath);
+            exitCode.Should().Be(0);
+            HasUtf8Bom(bytesAfterProcessing).Should().BeTrue();
+            bytesAfterProcessing.Should().BeEquivalentTo(bytesBeforeProcessing);
+        }
+        finally
+        {
+            File.Delete(tempPath);
+        }
+    }
+
+    [Fact]
+    public async Task FileMode_PreservesUtf8WithBom_WhenFileHasChanges()
+    {
+        // Arrange: Create a file with UTF-8 BOM that needs changes (bad using order)
+        var tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.cs");
+        var content = "using Zeta;\nusing Alpha;\n\nclass C { }\n";
+        var utf8WithBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
+        var preamble = utf8WithBom.GetPreamble();
+        var contentBytes = utf8WithBom.GetBytes(content);
+        var bytes = new byte[preamble.Length + contentBytes.Length];
+        preamble.CopyTo(bytes, 0);
+        contentBytes.CopyTo(bytes, preamble.Length);
+        await File.WriteAllBytesAsync(tempPath, bytes);
+
+        try
+        {
+            // Verify the file has UTF-8 BOM before processing
+            var bytesBeforeProcessing = await File.ReadAllBytesAsync(tempPath);
+            HasUtf8Bom(bytesBeforeProcessing).Should().BeTrue();
+
+            // Act: Process the file
+            var exitCode = await Program.Main([tempPath]);
+
+            // Assert: File should still have UTF-8 BOM
+            var bytesAfterProcessing = await File.ReadAllBytesAsync(tempPath);
+            exitCode.Should().Be(0);
+            HasUtf8Bom(bytesAfterProcessing).Should().BeTrue();
+
+            // Verify the content was actually changed (using directives sorted)
+            var processedContent = await File.ReadAllTextAsync(tempPath);
+            processedContent.IndexOf("using Alpha;", StringComparison.Ordinal).Should()
+                .BeLessThan(processedContent.IndexOf("using Zeta;", StringComparison.Ordinal));
+        }
+        finally
+        {
+            File.Delete(tempPath);
+        }
+    }
+
+    [Fact]
+    public async Task FileMode_PreservesUtf8WithoutBom_WhenFileHasNoChanges()
+    {
+        // Arrange: Create a file with UTF-8 without BOM that doesn't need changes
+        var tempPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.cs");
+        var content = "using System;\n\nclass C { }\n";
+        var utf8WithoutBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+        await File.WriteAllBytesAsync(tempPath, utf8WithoutBom.GetBytes(content));
+
+        try
+        {
+            // Verify the file doesn't have UTF-8 BOM before processing
+            var bytesBeforeProcessing = await File.ReadAllBytesAsync(tempPath);
+            HasUtf8Bom(bytesBeforeProcessing).Should().BeFalse();
+
+            // Act: Process the file
+            var exitCode = await Program.Main([tempPath]);
+
+            // Assert: File should still not have UTF-8 BOM
+            var bytesAfterProcessing = await File.ReadAllBytesAsync(tempPath);
+            exitCode.Should().Be(0);
+            HasUtf8Bom(bytesAfterProcessing).Should().BeFalse();
+            bytesAfterProcessing.Should().BeEquivalentTo(bytesBeforeProcessing);
+        }
+        finally
+        {
+            File.Delete(tempPath);
+        }
+    }
+
+    [Fact]
+    public async Task DirectoryMode_PreservesUtf8WithBom_ForFilesWithNoChanges()
+    {
+        // Arrange: Create a directory with files that have UTF-8 BOM and don't need changes
+        var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        var tempFile1 = Path.Combine(tempDir, "file1.cs");
+        var tempFile2 = Path.Combine(tempDir, "file2.cs");
+
+        var content = "using System;\n\nclass C { }\n";
+        var utf8WithBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
+        var preamble = utf8WithBom.GetPreamble();
+        var contentBytes = utf8WithBom.GetBytes(content);
+        var bytes = new byte[preamble.Length + contentBytes.Length];
+        preamble.CopyTo(bytes, 0);
+        contentBytes.CopyTo(bytes, preamble.Length);
+        await File.WriteAllBytesAsync(tempFile1, bytes);
+        await File.WriteAllBytesAsync(tempFile2, bytes);
+
+        try
+        {
+            // Verify files have UTF-8 BOM before processing
+            var bytes1Before = await File.ReadAllBytesAsync(tempFile1);
+            var bytes2Before = await File.ReadAllBytesAsync(tempFile2);
+            HasUtf8Bom(bytes1Before).Should().BeTrue();
+            HasUtf8Bom(bytes2Before).Should().BeTrue();
+
+            // Act: Process the directory
+            var exitCode = await Program.Main([tempDir]);
+
+            // Assert: Files should still have UTF-8 BOM
+            var bytes1After = await File.ReadAllBytesAsync(tempFile1);
+            var bytes2After = await File.ReadAllBytesAsync(tempFile2);
+            exitCode.Should().Be(0);
+            HasUtf8Bom(bytes1After).Should().BeTrue();
+            HasUtf8Bom(bytes2After).Should().BeTrue();
+            bytes1After.Should().BeEquivalentTo(bytes1Before);
+            bytes2After.Should().BeEquivalentTo(bytes2Before);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
     private static string GetTestCaseRequiringChanges()
     {
         var folder = Directory
@@ -499,5 +648,10 @@ public class IntegrationTests
 
         return folder
             ?? throw new InvalidOperationException("No integration test case requiring changes found.");
+    }
+
+    private static bool HasUtf8Bom(byte[] bytes)
+    {
+        return bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF;
     }
 }
