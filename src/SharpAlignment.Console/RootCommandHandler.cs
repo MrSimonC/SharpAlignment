@@ -77,7 +77,7 @@ public class RootCommandHandler
                 await FileEncodingHelper.WriteAllTextWithEncodingAsync(
                     GetRequiredFilePath(configuration),
                     output,
-                    fileEncoding!
+                    fileEncoding ?? throw new InvalidOperationException("File encoding was not detected")
                 ).ConfigureAwait(false);
             }
         }

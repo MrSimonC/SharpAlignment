@@ -503,7 +503,7 @@ public class IntegrationTests
         {
             // Verify the file has UTF-8 BOM before processing
             var bytesBeforeProcessing = await File.ReadAllBytesAsync(tempPath);
-            bytesBeforeProcessing.Should().StartWith(new byte[] { 0xEF, 0xBB, 0xBF });
+            HasUtf8Bom(bytesBeforeProcessing).Should().BeTrue();
 
             // Act: Process the file
             var exitCode = await Program.Main([tempPath]);
@@ -511,7 +511,7 @@ public class IntegrationTests
             // Assert: File should still have UTF-8 BOM
             var bytesAfterProcessing = await File.ReadAllBytesAsync(tempPath);
             exitCode.Should().Be(0);
-            bytesAfterProcessing.Should().StartWith(new byte[] { 0xEF, 0xBB, 0xBF });
+            HasUtf8Bom(bytesAfterProcessing).Should().BeTrue();
             bytesAfterProcessing.Should().BeEquivalentTo(bytesBeforeProcessing);
         }
         finally
@@ -538,7 +538,7 @@ public class IntegrationTests
         {
             // Verify the file has UTF-8 BOM before processing
             var bytesBeforeProcessing = await File.ReadAllBytesAsync(tempPath);
-            bytesBeforeProcessing.Should().StartWith(new byte[] { 0xEF, 0xBB, 0xBF });
+            HasUtf8Bom(bytesBeforeProcessing).Should().BeTrue();
 
             // Act: Process the file
             var exitCode = await Program.Main([tempPath]);
@@ -546,7 +546,7 @@ public class IntegrationTests
             // Assert: File should still have UTF-8 BOM
             var bytesAfterProcessing = await File.ReadAllBytesAsync(tempPath);
             exitCode.Should().Be(0);
-            bytesAfterProcessing.Should().StartWith(new byte[] { 0xEF, 0xBB, 0xBF });
+            HasUtf8Bom(bytesAfterProcessing).Should().BeTrue();
 
             // Verify the content was actually changed (using directives sorted)
             var processedContent = await File.ReadAllTextAsync(tempPath);
@@ -572,8 +572,7 @@ public class IntegrationTests
         {
             // Verify the file doesn't have UTF-8 BOM before processing
             var bytesBeforeProcessing = await File.ReadAllBytesAsync(tempPath);
-            (bytesBeforeProcessing.Length >= 3 && bytesBeforeProcessing[0] == 0xEF && bytesBeforeProcessing[1] == 0xBB && bytesBeforeProcessing[2] == 0xBF)
-                .Should().BeFalse();
+            HasUtf8Bom(bytesBeforeProcessing).Should().BeFalse();
 
             // Act: Process the file
             var exitCode = await Program.Main([tempPath]);
@@ -581,8 +580,7 @@ public class IntegrationTests
             // Assert: File should still not have UTF-8 BOM
             var bytesAfterProcessing = await File.ReadAllBytesAsync(tempPath);
             exitCode.Should().Be(0);
-            (bytesAfterProcessing.Length >= 3 && bytesAfterProcessing[0] == 0xEF && bytesAfterProcessing[1] == 0xBB && bytesAfterProcessing[2] == 0xBF)
-                .Should().BeFalse();
+            HasUtf8Bom(bytesAfterProcessing).Should().BeFalse();
             bytesAfterProcessing.Should().BeEquivalentTo(bytesBeforeProcessing);
         }
         finally
@@ -615,8 +613,8 @@ public class IntegrationTests
             // Verify files have UTF-8 BOM before processing
             var bytes1Before = await File.ReadAllBytesAsync(tempFile1);
             var bytes2Before = await File.ReadAllBytesAsync(tempFile2);
-            bytes1Before.Should().StartWith(new byte[] { 0xEF, 0xBB, 0xBF });
-            bytes2Before.Should().StartWith(new byte[] { 0xEF, 0xBB, 0xBF });
+            HasUtf8Bom(bytes1Before).Should().BeTrue();
+            HasUtf8Bom(bytes2Before).Should().BeTrue();
 
             // Act: Process the directory
             var exitCode = await Program.Main([tempDir]);
@@ -625,8 +623,8 @@ public class IntegrationTests
             var bytes1After = await File.ReadAllBytesAsync(tempFile1);
             var bytes2After = await File.ReadAllBytesAsync(tempFile2);
             exitCode.Should().Be(0);
-            bytes1After.Should().StartWith(new byte[] { 0xEF, 0xBB, 0xBF });
-            bytes2After.Should().StartWith(new byte[] { 0xEF, 0xBB, 0xBF });
+            HasUtf8Bom(bytes1After).Should().BeTrue();
+            HasUtf8Bom(bytes2After).Should().BeTrue();
             bytes1After.Should().BeEquivalentTo(bytes1Before);
             bytes2After.Should().BeEquivalentTo(bytes2Before);
         }
@@ -650,5 +648,10 @@ public class IntegrationTests
 
         return folder
             ?? throw new InvalidOperationException("No integration test case requiring changes found.");
+    }
+
+    private static bool HasUtf8Bom(byte[] bytes)
+    {
+        return bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF;
     }
 }
